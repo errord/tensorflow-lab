@@ -2,7 +2,12 @@
 # ChezScheme support for TensorFlow.
 #
 # Public targets:
+#  gen_chezscheme_source
 #  tf_chezscheme
+#
+# Usage:
+# bazel build -c opt --verbose_failures //tensorflow/chezscheme:gen_chezscheme_source
+# bazel build -c opt --verbose_failures//tensorflow/chezscheme:tf_chezscheme
 #
 
 package(
@@ -22,6 +27,139 @@ load(
     "tf_copts",
     "tf_gen_op_wrappers_cc",
 )
+load(
+    ":config_chezscheme.bzl",
+    "cs_source_files",
+    "cs_hdrs_files",
+)
+
+genrule(
+    name = "gen_chezscheme_source",
+    srcs = [],
+    outs = ["bin/run.sh",
+            "bin/scheme",
+            "boot/equates.h",
+            "boot/scheme.h",
+            "boot/petite.boot",
+            "boot/scheme.boot"],
+    cmd = """
+
+            threads=yes
+            #threads=no
+
+            CONFIG_UNAME=`uname`
+
+            case \"$$CONFIG_UNAME\" in
+            Linux)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3le
+                m64=a6le
+                tm32=ti3le
+                tm64=ta6le
+            elif uname -a | grep -i power > /dev/null 2>&1 ; then
+                m32=ppc32le
+                m64=""
+                tm32=tppc32le
+                tm64=""
+            fi
+            ;;
+            QNX)
+            if uname -a | egrep 'x86' > /dev/null 2>&1 ; then
+                    m32=i3qnx
+                    tm32=ti3qnx
+            fi
+            ;;
+            FreeBSD)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3fb
+                m64=a6fb
+                tm32=ti3fb
+                tm64=ta6fb
+            fi
+            ;;
+            OpenBSD)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3ob
+                m64=a6ob
+                tm32=ti3ob
+                tm64=ta6ob
+            fi
+            ;;
+            NetBSD)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3nb
+                m64=a6nb
+                tm32=ti3nb
+                tm64=ta6nb
+            fi
+            ;;
+            Darwin)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3osx
+                m64=a6osx
+                tm32=ti3osx
+                tm64=ta6osx
+            fi
+            ;;
+            SunOS)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3s2
+                m64=a6s2
+                tm32=ti3s2
+                tm64=ta6s2
+            fi
+            ;;
+            CYGWIN_NT-*)
+            if uname -a | egrep 'i386|i686|amd64|athlon|x86_64' > /dev/null 2>&1 ; then
+                m32=i3nt
+                m64=a6nt
+                tm32=ti3nt
+                tm64=ta6nt
+        fi
+        ;;
+        esac
+
+        if uname -a | egrep 'amd64|x86_64' > /dev/null 2>&1 ; then
+            bits=64
+        else
+            bits=32
+        fi
+
+        if [ $$bits = 64 ] ; then
+            if [ $$threads = yes ] ; then m=$$tm64 ; else m=$$m64 ; fi
+        else
+            if [ $$threads = yes ] ; then m=$$tm32 ; else m=$$m32 ; fi
+        fi
+
+        if [ $$threads = yes ] ; then THREADOPT=\"--threads\" ; else THREADOPT=\"\" ; fi
+
+        cd tensorflow/chezscheme/ChezScheme
+        ./configure CPPFLAGS=-DFEATURE_TENSORFLOW $$THREADOPT
+        make
+        # create logical path
+        ln -s $$m tf_chezscheme
+        cd tf_chezscheme/boot
+        ln -s $$m tf_boot
+        cd ../../
+        cd ../../../
+
+        for f in $(OUTS); do
+            if [[ ! $$f =~ run.sh ]]; then
+                if [[ $$f =~ bin/scheme ]]; then
+                    cp tensorflow/chezscheme/ChezScheme/$$m/bin/$${f##*/} $(@D)/bin
+                else
+                    cp tensorflow/chezscheme/ChezScheme/$$m/boot/$$m/$${f##*/} $(@D)/boot
+                fi
+            fi
+        done
+
+        echo \"\"\"
+        ./scheme -b ../boot/petite.boot -b ../boot/scheme.boot
+        \"\"\" > $(@D)/bin/run.sh
+
+        """,
+            visibility = ["//visibility:public"],
+)
 
 cc_library(
     name = "lz4",
@@ -39,55 +177,20 @@ cc_library(
             "ChezScheme/lz4/lib/xxhash.h",
     ],
     copts = tf_copts() + ["-DX86_64"],
-)    
+)
 
 cc_library(
     name = "chezscheme",
-    srcs = [
-            "ChezScheme/a6osx/c/alloc.c",
-            "ChezScheme/a6osx/c/statics.c",
-            "ChezScheme/a6osx/c/segment.c",
-            "ChezScheme/a6osx/c/symbol.c",
-            "ChezScheme/a6osx/c/intern.c",
-            "ChezScheme/a6osx/c/gcwrapper.c",
-            "ChezScheme/a6osx/c/gc-ocd.c",
-            "ChezScheme/a6osx/c/gc-oce.c",
-            "ChezScheme/a6osx/c/number.c",
-            "ChezScheme/a6osx/c/schsig.c",
-            "ChezScheme/a6osx/c/io.c",
-            "ChezScheme/a6osx/c/new-io.c",
-            "ChezScheme/a6osx/c/print.c",
-            "ChezScheme/a6osx/c/fasl.c",
-            "ChezScheme/a6osx/c/stats.c",
-            "ChezScheme/a6osx/c/foreign.c",
-            "ChezScheme/a6osx/c/prim.c",
-            "ChezScheme/a6osx/c/prim5.c",
-            "ChezScheme/a6osx/c/flushcache.c",
-            "ChezScheme/a6osx/c/schlib.c",
-            "ChezScheme/a6osx/c/thread.c",
-            "ChezScheme/a6osx/c/expeditor.c",
-            "ChezScheme/a6osx/c/scheme.c",
-            "ChezScheme/a6osx/c/compress-io.c",
-            "ChezScheme/a6osx/c/i3le.c"],
-    hdrs = [
-            "ChezScheme/a6osx/c/gc.inc",
-            "ChezScheme/a6osx/c/system.h",
-            "ChezScheme/a6osx/c/version.h",
-            "ChezScheme/a6osx/c/config.h",
-            "ChezScheme/a6osx/c/thread.h",
-            "ChezScheme/a6osx/c/compress-io.h",
-            "ChezScheme/a6osx/c/globals.h",
-            "ChezScheme/a6osx/c/externs.h",
-            "ChezScheme/a6osx/c/segment.h",
-            "ChezScheme/a6osx/c/types.h",
-            "ChezScheme/a6osx/c/sort.h",
-            "ChezScheme/a6osx/boot/a6osx/scheme.h",
-            "ChezScheme/a6osx/boot/a6osx/equates.h"],
-    copts = tf_copts() + ["-DX86_64"],
+    srcs = cs_source_files(),
+    hdrs = cs_hdrs_files(),
+    copts = tf_copts() + ["-I./tensorflow/chezscheme/ChezScheme/tf_chezscheme/boot/tf_boot/",
+                          "-I./tensorflow/chezscheme/ChezScheme/lz4/lib/"]
+                       + ["-DFEATURE_TENSORFLOW", "-DX86_64"],
     deps = [
         ":lz4",
     ],
 )
+
 
 cc_library(
     name = "chezscheme_for_tensorflow",
@@ -97,7 +200,9 @@ cc_library(
     hdrs = [
             "chezscheme_for_tensorflow/tf_util.h",
     ],
-    copts = tf_copts() + ["-DX86_64"],
+    copts = tf_copts() + ["-I./tensorflow/chezscheme/ChezScheme/tf_chezscheme/c/",
+                          "-I./tensorflow/chezscheme/ChezScheme/tf_chezscheme/boot/tf_boot/",]
+                       + ["-DX86_64"],
     deps = [
         ":chezscheme",
         "//tensorflow/core:tensorflow",
@@ -108,7 +213,9 @@ cc_library(
 tf_cc_binary(
     name = "tf_chezscheme",
     srcs = ["tf_chezscheme.c"],
-    copts = tf_copts() + ["-DX86_64"],
+    copts = tf_copts() + ["-I./tensorflow/chezscheme/ChezScheme/tf_chezscheme/c/",
+                          "-I./tensorflow/chezscheme/ChezScheme/tf_chezscheme/boot/tf_boot/",]
+                       + ["-DX86_64"],
     linkopts = select({
         "//tensorflow:macos": [
             "-lm",

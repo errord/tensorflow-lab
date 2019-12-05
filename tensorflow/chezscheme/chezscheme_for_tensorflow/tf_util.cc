@@ -19,7 +19,7 @@ limitations under the License.
 #include <vector>
 #include <iostream>
 
-#include "tf_util.h"
+
 #include "tensorflow/cc/ops/standard_ops.h"
 #include "tensorflow/core/framework/graph.pb.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -33,11 +33,7 @@ limitations under the License.
 #include "tensorflow/core/platform/types.h"
 #include "tensorflow/core/public/session.h"
 
-
-#include "tensorflow/chezscheme/ChezScheme/a6osx/boot/a6osx/scheme.h"
-#include "tensorflow/chezscheme/ChezScheme/a6osx/c/config.h"
-#include "tensorflow/chezscheme/ChezScheme/a6osx/c/system.h"
-
+#include "tf_util.h"
 
 using tensorflow::string;
 using tensorflow::int32;

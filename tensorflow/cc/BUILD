@@ -736,6 +736,35 @@ tf_cc_binary(
     ],
 )
 
+tf_cc_binary(
+    name = "labX_test",
+    srcs = ["labX/example_trainer.cc"],
+    copts = tf_copts(),
+    linkopts = select({
+        "//tensorflow:macos": [
+            "-lm",
+            "-lpthread",
+        ],
+        "//tensorflow:ios": [
+            "-lm",
+            "-lpthread",
+        ],
+        "//conditions:default": [
+            "-lm",
+            "-lpthread",
+            "-lrt",
+        ],
+    }),
+    deps = [
+        ":cc_ops",
+        "//tensorflow/core:core_cpu",
+        "//tensorflow/core:framework",
+        "//tensorflow/core:lib",
+        "//tensorflow/core:protos_all_cc",
+        "//tensorflow/core:tensorflow",
+    ],
+)
+
 cc_library(
     name = "queue_runner",
     srcs = ["training/queue_runner.cc"],
