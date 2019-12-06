@@ -1,12 +1,12 @@
-# Chezscheme For Tensorflow
+# Cheztensor
 
-chezscheme tensorflow binding
+ChezScheme Tensorflow Bindings
 
 ### Build on Tensorflow
 
 * download Tensorflow source code
 
-* '''git clone https://github.com/cognboun/chezscheme_for_tensorflow.git''' in tensorflow/tensorflow
+* ```git clone https://github.com/cognboun/chezscheme_for_tensorflow.git``` in tensorflow/tensorflow
 
 * rename chezscheme_for_tensorflow chezscheme
 
@@ -28,10 +28,10 @@ build_chezscheme build_opt=DEFAULT_BUILD_OPT:
 ```
 
 ### todolist
-- [ ]  Tensorflow bind Chezscheme
+- [ ]  Tensorflow bindings Chezscheme
 	- [ ] validation tensorflow c_api or c++ api
 	- [ ] develop tensorflow base function
-	- [ ] develop chezscheme bind function
+	- [ ] develop chezscheme bindings function
 	- [ ] chezscheme wrapper
 	- [ ] chezscheme mathematical environment base on tensorflow
 	- [ ] chezscheme tensorflow environment
