@@ -22,10 +22,12 @@ exports_files(["LICENSE"])
 
 load(
     "//tensorflow:tensorflow.bzl",
+    "VERSION",
     "tf_cc_test",
     "tf_cc_binary",
     "tf_copts",
     "tf_gen_op_wrappers_cc",
+    "tf_cc_shared_object",
 )
 load(
     ":config_chezscheme.bzl",
@@ -207,8 +209,45 @@ cc_library(
         ":chezscheme",
         "//tensorflow/core:tensorflow",
         "//tensorflow/cc:cc_ops",
+        "//tensorflow/core:core_cpu",
+        "//tensorflow/core:framework",
+        "//tensorflow/core:lib",
+        "//tensorflow/core:protos_all_cc",
     ],
 )    
+
+
+tf_cc_shared_object(
+    name = "chezscheme_for_tensorflow_so",
+    linkopts = select({
+        "//tensorflow:macos": [
+            "-Wl",
+        ],
+        "//tensorflow:windows": [],
+        "//conditions:default": [
+            "-z defs",
+            "-Wl",
+        ],
+    }),
+    per_os_targets = True,
+    soversion = VERSION,
+    visibility = ["//visibility:public"],
+    # add win_def_file for tensorflow_cc
+    win_def_file = select({
+        # We need this DEF file to properly export symbols on Windows
+        "//tensorflow:windows": ":tensorflow_filtered_def_file",
+        "//conditions:default": None,
+    }),
+    deps = [
+        ":chezscheme",
+        "//tensorflow/core:tensorflow",
+        "//tensorflow/cc:cc_ops",
+        "//tensorflow/core:core_cpu",
+        "//tensorflow/core:framework",
+        "//tensorflow/core:lib",
+        "//tensorflow/core:protos_all_cc",
+    ],
+)
 
 tf_cc_binary(
     name = "tf_chezscheme",
@@ -236,12 +275,5 @@ tf_cc_binary(
     }),
     deps = [
         ":chezscheme_for_tensorflow",
-        "//tensorflow/cc:cc_ops",
-        "//tensorflow/core:core_cpu",
-        "//tensorflow/core:framework",
-        "//tensorflow/core:lib",
-        "//tensorflow/core:protos_all_cc",
-        "//tensorflow/core:tensorflow",
     ],
 )
-
